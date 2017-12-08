@@ -9,7 +9,7 @@
         <hudson.model.StringParameterDefinition>
           <name>IMAGE_ID</name>
           <description>The ID of the OS image that needs to be deployed to the production environment.</description>
-          <defaultValue>/subscriptions/2085065b-00f8-4cba-9675-ba15f4d4ab66/resourceGroups/menxiao-packer/providers/Microsoft.Compute/images/tomcat-8</defaultValue>
+          <defaultValue></defaultValue>
         </hudson.model.StringParameterDefinition>
       </parameterDefinitions>
     </hudson.model.ParametersDefinitionProperty>
@@ -105,8 +105,8 @@ az logout
 az login --service-principal -u "\$AZURE_CLIENT_ID" -p "\$AZURE_CLIENT_SECRET" -t "\$AZURE_TENANT_ID"
 az account set --subscription "\$AZURE_SUBSCRIPTION_ID"
 public_ip_id="\$(az network lb show --resource-group "${resourceGroup}" --name "${lbName}" --query 'frontendIpConfigurations[].publicIpAddress.id' --output tsv | head -n1)"
-service_ip="\$(az network public-ip show --ids "\$public_ip_id" --query ipAddress --output tsv)"
-endpoint="http://\$service_ip${portSuffix}"
+service_fqdn="\$(az network public-ip show --ids "\$public_ip_id" --query dnsSettings.fqdn --output tsv)"
+endpoint="http://\$service_fqdn${portSuffix}"
 echo "Wait ${environ} endpoint \$endpoint to be ready."
 count=0
 while true; do
