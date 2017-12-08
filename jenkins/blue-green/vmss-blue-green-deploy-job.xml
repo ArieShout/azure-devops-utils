@@ -74,8 +74,16 @@ az logout
     }
 
     stage('Update VMSS') {
-        azureVMSSUpdate azureCredentialsId: servicePrincipalId, resourceGroup: resourceGroup, name: targetVmss(),
-                imageReference: [id: imageId]
+        //FIXME: azureVMSSUpdate will discard the network security group associated with the VMSS virtual machine profile.
+        //azureVMSSUpdate azureCredentialsId: servicePrincipalId, resourceGroup: resourceGroup, name: targetVmss(), imageReference: [id: imageId]
+        withCredentials([azureServicePrincipal(servicePrincipalId)]) {
+            sh """
+az login --service-principal -u "\$AZURE_CLIENT_ID" -p "\$AZURE_CLIENT_SECRET" -t "\$AZURE_TENANT_ID"
+az account set --subscription "\$AZURE_SUBSCRIPTION_ID"
+az vmss update --resource-group "${resourceGroup}" --name "${targetVmss()}" --set "virtualMachineProfile.storageProfile.imageReference.id=${imageId}"
+az logout
+"""
+        }
     }
 
     stage('Update Test Endpoint') {
@@ -84,6 +92,7 @@ az logout
 az login --service-principal -u "\$AZURE_CLIENT_ID" -p "\$AZURE_CLIENT_SECRET" -t "\$AZURE_TENANT_ID"
 az account set --subscription "\$AZURE_SUBSCRIPTION_ID"
 az network lb rule update --resource-group "${resourceGroup}" --lb-name "${lbName}" --name "${testServiceName}" --backend-pool-name "${targetBackend()}" --backend-port 8080
+az logout
 """
         }
     }
@@ -112,6 +121,7 @@ while true; do
     echo "${environ} environment is not ready, wait 10 seconds..."
     sleep 10
 done
+az logout
 """
         }
     }
@@ -126,6 +136,7 @@ done
 az login --service-principal -u "\$AZURE_CLIENT_ID" -p "\$AZURE_CLIENT_SECRET" -t "\$AZURE_TENANT_ID"
 az account set --subscription "\$AZURE_SUBSCRIPTION_ID"
 az network lb rule update --resource-group "${resourceGroup}" --lb-name "${lbName}" --name "${testServiceName}" --backend-pool-name "${targetBackend()}" --backend-port 8081
+az logout
 """
         }
     }
@@ -136,6 +147,7 @@ az network lb rule update --resource-group "${resourceGroup}" --lb-name "${lbNam
 az login --service-principal -u "\$AZURE_CLIENT_ID" -p "\$AZURE_CLIENT_SECRET" -t "\$AZURE_TENANT_ID"
 az account set --subscription "\$AZURE_SUBSCRIPTION_ID"
 az network lb rule update --resource-group "${resourceGroup}" --lb-name "${lbName}" --name "${serviceName}" --backend-pool-name "${targetBackend()}"
+az logout
 """
         }
     }
